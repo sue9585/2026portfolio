@@ -1,10 +1,12 @@
 const object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-export function isPublicUrl(value, email = true) {
+export function isPublicUrl(value, contacts = true) {
   if (typeof value !== "string" || /[\s\u0000-\u001f]/.test(value)) return false;
   try {
     const url = new URL(value);
     if (url.protocol === "https:") return !!url.hostname && !url.username && !url.password;
-    return email && url.protocol === "mailto:" && /^[^@/?#]+@[^@/?#]+\.[^@/?#]+$/.test(url.pathname) && !url.search && !url.hash;
+    if (!contacts || url.search || url.hash) return false;
+    if (url.protocol === "tel:") return /^\+?[0-9]{6,15}$/.test(url.pathname);
+    return url.protocol === "mailto:" && /^[^@/?#]+@[^@/?#]+\.[^@/?#]+$/.test(url.pathname);
   } catch { return false; }
 }
 export function isLocalImage(value) {
@@ -24,7 +26,7 @@ export function validatePortfolio(data) {
   const links = (value, key) => list(value, key, (link, at) => {
     if (!obj(link, at, ["label", "url"])) return;
     str(link.label, `${at}.label`);
-    if (!isPublicUrl(link.url)) fail(`${at}.url`, "https:// 주소 또는 mailto:이메일을 입력하세요.");
+    if (!isPublicUrl(link.url)) fail(`${at}.url`, "https:// 주소, mailto:이메일 또는 tel:전화번호를 입력하세요.");
   });
   const records = (value, key) => list(value, key, (entry, at) => {
     if (!obj(entry, at, ["title", "period", "description"])) return;
